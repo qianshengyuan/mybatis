@@ -18,6 +18,7 @@ public class SqlSessionFactoryApp {
   public static void main(String[] args) throws IOException {
     // 从配置文件中创建一个输入流
     InputStream xml = Resources.getResourceAsStream("mybatis-config.xml");
+    // 工厂模式
     SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(xml);
     System.out.println(sqlSessionFactory.getClass());
   }
