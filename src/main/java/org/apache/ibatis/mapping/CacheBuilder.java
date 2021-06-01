@@ -90,12 +90,15 @@ public class CacheBuilder {
   }
 
   public Cache build() {
+    // 设置默认的缓存实现类
     setDefaultImplementations();
     Cache cache = newBaseCacheInstance(implementation, id);
     setCacheProperties(cache);
     // issue #352, do not apply decorators to custom caches
+    // 判断当前的缓存实现类是否是默认的缓存实现类PerpetualCache.class
     if (PerpetualCache.class.equals(cache.getClass())) {
       for (Class<? extends Cache> decorator : decorators) {
+        // 装饰器默认只有一个LruCache
         cache = newCacheDecoratorInstance(decorator, cache);
         setCacheProperties(cache);
       }
@@ -107,6 +110,7 @@ public class CacheBuilder {
   }
 
   private void setDefaultImplementations() {
+    // 如果没有配置用户自定义缓存实现类，则默认为 PerpetualCache
     if (implementation == null) {
       implementation = PerpetualCache.class;
       if (decorators.isEmpty()) {
@@ -115,6 +119,7 @@ public class CacheBuilder {
     }
   }
 
+  // 装饰器+责任链设计模式
   private Cache setStandardDecorators(Cache cache) {
     try {
       MetaObject metaCache = SystemMetaObject.forObject(cache);
@@ -126,9 +131,12 @@ public class CacheBuilder {
         ((ScheduledCache) cache).setClearInterval(clearInterval);
       }
       if (readWrite) {
+        // 将上一个cache设置到序列化cache的委托delegate中去
         cache = new SerializedCache(cache);
       }
+      // 将上一步得到的cache设置到日志缓存cache的delegate中去
       cache = new LoggingCache(cache);
+      // 将上一步得到的cache设置到同步cache的delegate中去
       cache = new SynchronizedCache(cache);
       if (blocking) {
         cache = new BlockingCache(cache);

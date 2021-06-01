@@ -117,25 +117,28 @@ public class XMLConfigBuilder extends BaseBuilder {
       propertiesElement(root.evalNode("properties"));
       // 解析settings节点
       Properties settings = settingsAsProperties(root.evalNode("settings"));
+      // 基本不用此属性  vfs的含义是虚拟文件系统，主要是能通过程序方便读取本地文件系统、ftp文件系统等系统的文件资源
       loadCustomVfs(settings);
+      // 指定mybatis的日志实现
       loadCustomLogImpl(settings);
       // 解析typeAliases节点
       typeAliasesElement(root.evalNode("typeAliases"));
-      // 解析plugins节点
+      // 解析plugins节点 即插件，将所有插件设置到interceptChain拦截器链中
       pluginElement(root.evalNode("plugins"));
       // 解析objectFactory节点
       objectFactoryElement(root.evalNode("objectFactory"));
-      // 解析objectFactory节点
+      // 解析objectWrapperFactory节点
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
-      // 解析objectFactory节点
+      // 解析reflectorFactory节点
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
+      // 设置setting信息，如果选项没有配置，则提供默认值
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
-      // 解析objectFactory节点
+      // 解析environments节点
       environmentsElement(root.evalNode("environments"));
-      // 解析objectFactory节点
+      // 解析databaseIdProvider节点 设置数据库厂商ID
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
-      // 解析objectFactory节点
+      // 解析typeHandlers节点 类型处理器
       typeHandlerElement(root.evalNode("typeHandlers"));
       // 解析mappers节点，将mapper映射文件中的内容全部解析并保存在configuration中
       mapperElement(root.evalNode("mappers"));
@@ -243,13 +246,16 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void propertiesElement(XNode context) throws Exception {
     // 配置了properties属性才去解析
     if (context != null) {
+      // 如果properties标签中配置了指定属性，获取子节点
       Properties defaults = context.getChildrenAsProperties();
+      // 拿到资源地址，
       String resource = context.getStringAttribute("resource");
       String url = context.getStringAttribute("url");
       if (resource != null && url != null) {
         throw new BuilderException("The properties element cannot specify both a URL and a resource based property file reference.  Please specify one or the other.");
       }
       if (resource != null) {
+        // 将外部resource资源文件，加载成properties，并保存
         defaults.putAll(Resources.getResourceAsProperties(resource));
       } else if (url != null) {
         defaults.putAll(Resources.getUrlAsProperties(url));
@@ -259,6 +265,7 @@ public class XMLConfigBuilder extends BaseBuilder {
         defaults.putAll(vars);
       }
       parser.setVariables(defaults);
+      // 将解析的properties属性保存到configuration中
       configuration.setVariables(defaults);
     }
   }
@@ -386,6 +393,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
+        // 判断mapper是不是批量注册的
         if ("package".equals(child.getName())) {
           String mapperPackage = child.getStringAttribute("name");
           configuration.addMappers(mapperPackage);

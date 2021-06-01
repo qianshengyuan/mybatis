@@ -91,7 +91,9 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   public void parse() {
+    // 判断当前的类是否被加载过
     if (!configuration.isResourceLoaded(resource)) {
+      // 真正的解析我们的mapper文件
       configurationElement(parser.evalNode("/mapper"));
       configuration.addLoadedResource(resource);
       bindMapperForNamespace();
@@ -108,16 +110,24 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void configurationElement(XNode context) {
     try {
+      // 解析namespace属性
       String namespace = context.getStringAttribute("namespace");
       if (namespace == null || namespace.isEmpty()) {
         throw new BuilderException("Mapper's namespace cannot be empty");
       }
+      // 保存我们的namespace，并且判断接口全类名==namespace
       builderAssistant.setCurrentNamespace(namespace);
+      // 解析缓存引用
       cacheRefElement(context.evalNode("cache-ref"));
+      // 解析缓存
       cacheElement(context.evalNode("cache"));
+      // 解析parameterMap 是一个list
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      // 解析resultMap 是一个list
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      // 解析可复用的sql信息 是一个list
       sqlElement(context.evalNodes("/mapper/sql"));
+      // 解析所有的增删改查标签
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
@@ -125,6 +135,7 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void buildStatementFromContext(List<XNode> list) {
+    // 判断有没有配置数据库厂商ID 这个判断有点啰嗦
     if (configuration.getDatabaseId() != null) {
       buildStatementFromContext(list, configuration.getDatabaseId());
     }
@@ -133,8 +144,10 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
     for (XNode context : list) {
+      // list是所有增删改查标签的集合
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context, requiredDatabaseId);
       try {
+        // 解析增删改查标签
         statementParser.parseStatementNode();
       } catch (IncompleteElementException e) {
         configuration.addIncompleteStatement(statementParser);
@@ -200,16 +213,26 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void cacheElement(XNode context) {
+    // 配置了缓存
     if (context != null) {
+      // 解析cache节点的type属性 默认 PERPETUAL
       String type = context.getStringAttribute("type", "PERPETUAL");
+      // 根据type的String获取class类型
       Class<? extends Cache> typeClass = typeAliasRegistry.resolveAlias(type);
+      // 获取缓存过期策略，默认是LRU
       String eviction = context.getStringAttribute("eviction", "LRU");
       Class<? extends Cache> evictionClass = typeAliasRegistry.resolveAlias(eviction);
+      // flushInterval 刷新时间 可以设置成任意的正整数，单位是毫秒
       Long flushInterval = context.getLongAttribute("flushInterval");
+      // size 引用数量 缓存数量？
       Integer size = context.getIntAttribute("size");
+      // 可以读写  对设置的只读属性进行取反
       boolean readWrite = !context.getBooleanAttribute("readOnly", false);
+      //
       boolean blocking = context.getBooleanAttribute("blocking", false);
+      // 解析所有cache子节点属性值
       Properties props = context.getChildrenAsProperties();
+      // 使用解析出来的所有属性 new一个cache 里面也使用了构造器模式
       builderAssistant.useNewCache(typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);
     }
   }

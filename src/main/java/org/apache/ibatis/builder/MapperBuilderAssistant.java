@@ -128,15 +128,17 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean readWrite,
       boolean blocking,
       Properties props) {
-    Cache cache = new CacheBuilder(currentNamespace)
-        .implementation(valueOrDefault(typeClass, PerpetualCache.class))
-        .addDecorator(valueOrDefault(evictionClass, LruCache.class))
-        .clearInterval(flushInterval)
-        .size(size)
-        .readWrite(readWrite)
-        .blocking(blocking)
-        .properties(props)
-        .build();
+    CacheBuilder cacheBuilder = new CacheBuilder(currentNamespace)
+      .implementation(valueOrDefault(typeClass, PerpetualCache.class))
+      .addDecorator(valueOrDefault(evictionClass, LruCache.class)) // 放置到装饰器中
+      .clearInterval(flushInterval)
+      .size(size)
+      .readWrite(readWrite)
+      .blocking(blocking)
+      .properties(props);
+    // 获取一个缓存对象，这里用了责任链模式  二级缓存原理
+    Cache cache = cacheBuilder.build();
+    // 最终将cache存到configuration中
     configuration.addCache(cache);
     currentCache = cache;
     return cache;
@@ -294,6 +296,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
 
     MappedStatement statement = statementBuilder.build();
+    // 放到configuration对象的mappedStatement集合中
     configuration.addMappedStatement(statement);
     return statement;
   }

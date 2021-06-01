@@ -82,6 +82,7 @@ public class SqlSessionFactoryBuilder {
   public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
     try {
       // 新建一个解析器XMLConfigBuilder，里面有一个对象属性XPathParser 用来解析全局配置文件
+      // xxxBuilder 构造器模式
       XMLConfigBuilder parser = new XMLConfigBuilder(inputStream, environment, properties);
       // 将全局配置文件与mapper映射文件都解析到一个Configuration对象中
       Configuration configuration = parser.parse();

@@ -54,17 +54,25 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   public void parseStatementNode() {
+    // 拿到标签中的id
     String id = context.getStringAttribute("id");
     String databaseId = context.getStringAttribute("databaseId");
 
+    // 先判断数据库厂商ID与增删改查标签中的数据库厂商ID（如果配置了）是否一致，如果不一致，忽略此标签，不进行解析
     if (!databaseIdMatchesCurrent(id, databaseId, this.requiredDatabaseId)) {
       return;
     }
 
+    // 获取节点名称 select | update | insert | delete
     String nodeName = context.getNode().getNodeName();
+    // 根据节点名称获取sqlCommandType枚举对象
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
+    // 判断当前是不是查询语句
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
+    // 获取flushCash属性 是否清空缓存（同时清空一级和二级缓存）
+    // 查询语句默认不清空缓存，增删改语句默认清空cache
     boolean flushCache = context.getBooleanAttribute("flushCache", !isSelect);
+    // 是否使用缓存 查询默认使用 增删改默认不使用
     boolean useCache = context.getBooleanAttribute("useCache", isSelect);
     boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
@@ -75,10 +83,12 @@ public class XMLStatementBuilder extends BaseBuilder {
     String parameterType = context.getStringAttribute("parameterType");
     Class<?> parameterTypeClass = resolveClass(parameterType);
 
+    // 获取自定义sql脚本语言驱动
     String lang = context.getStringAttribute("lang");
     LanguageDriver langDriver = getLanguageDriver(lang);
 
     // Parse selectKey after includes and remove them.
+    // 解析<insert>语句中的selectKey属性，一般用在oracle中设置自增主键
     processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
     // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
@@ -93,7 +103,9 @@ public class XMLStatementBuilder extends BaseBuilder {
           ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
 
+    // 解析sql 将sql语句解析成一个一个Node节点 不是最终的sql
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
+
     StatementType statementType = StatementType.valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
     Integer fetchSize = context.getIntAttribute("fetchSize");
     Integer timeout = context.getIntAttribute("timeout");
@@ -110,6 +122,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     String keyColumn = context.getStringAttribute("keyColumn");
     String resultSets = context.getStringAttribute("resultSets");
 
+    // 将一个增删改查标签封装成一个MappedStatement对象
     builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType,
         fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, resultTypeClass,
         resultSetTypeEnum, flushCache, useCache, resultOrdered,

@@ -107,6 +107,7 @@ public class MapperAnnotationBuilder {
 
   public MapperAnnotationBuilder(Configuration configuration, Class<?> type) {
     String resource = type.getName().replace('.', '/') + ".java (best guess)";
+    // MapperBuilderAssistant 这个的用处？
     this.assistant = new MapperBuilderAssistant(configuration, resource);
     this.configuration = configuration;
     this.type = type;
@@ -114,7 +115,9 @@ public class MapperAnnotationBuilder {
 
   public void parse() {
     String resource = type.toString();
+    // 是否已经解析过mapper接口对应的xml文件
     if (!configuration.isResourceLoaded(resource)) {
+      // 根据mapper接口名获取xml文件解析，解析<mapper></mapper>里面所有东西放到configuration中
       loadXmlResource();
       configuration.addLoadedResource(resource);
       assistant.setCurrentNamespace(type.getName());
@@ -158,13 +161,18 @@ public class MapperAnnotationBuilder {
     }
   }
 
+  /**
+   * 加载mapper映射文件并进行解析
+   */
   private void loadXmlResource() {
     // Spring may not know the real resource name so we check a flag
     // to prevent loading again a resource twice
     // this flag is set at XMLMapperBuilder#bindMapperForNamespace
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
+      // 根据类名，转换成xml文件的物理路径
       String xmlResource = type.getName().replace('.', '/') + ".xml";
       // #1347
+      // 读取对应的xml文件
       InputStream inputStream = type.getResourceAsStream("/" + xmlResource);
       if (inputStream == null) {
         // Search XML mapper that is not in the module but in the classpath.
@@ -176,6 +184,7 @@ public class MapperAnnotationBuilder {
       }
       if (inputStream != null) {
         XMLMapperBuilder xmlParser = new XMLMapperBuilder(inputStream, assistant.getConfiguration(), xmlResource, configuration.getSqlFragments(), type.getName());
+        // 解析mapper映射文件
         xmlParser.parse();
       }
     }
