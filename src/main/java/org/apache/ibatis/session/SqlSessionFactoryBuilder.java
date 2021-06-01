@@ -72,10 +72,22 @@ public class SqlSessionFactoryBuilder {
     return build(inputStream, null, properties);
   }
 
+  /**
+   * 获取一个SqlSessionFactory对象，包含Configuration对象（全局配置文件+mapper映射文件）
+   * @param inputStream
+   * @param environment
+   * @param properties
+   * @return
+   */
   public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
     try {
+      // 新建一个解析器XMLConfigBuilder，里面有一个对象属性XPathParser 用来解析全局配置文件
       XMLConfigBuilder parser = new XMLConfigBuilder(inputStream, environment, properties);
-      return build(parser.parse());
+      // 将全局配置文件与mapper映射文件都解析到一个Configuration对象中
+      Configuration configuration = parser.parse();
+      // 通过configuration对象构建一个SqlSessionFactory对象并返回
+      SqlSessionFactory sqlSessionFactory = build(configuration);
+      return sqlSessionFactory;
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error building SqlSession.", e);
     } finally {

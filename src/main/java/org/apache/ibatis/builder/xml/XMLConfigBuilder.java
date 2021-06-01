@@ -83,6 +83,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   private XMLConfigBuilder(XPathParser parser, String environment, Properties props) {
+    // 创建一个Configuration对象
     super(new Configuration());
     ErrorContext.instance().resource("SQL Mapper Configuration");
     this.configuration.setVariables(props);
@@ -92,31 +93,51 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   public Configuration parse() {
+    // 如果解析过，报错，只允许解析一次
     if (parsed) {
       throw new BuilderException("Each XMLConfigBuilder can only be used once.");
     }
+    // 解析标志赋值为true，表示已经解析过，如果再次解析，会在上一步直接报错
     parsed = true;
-    parseConfiguration(parser.evalNode("/configuration"));
+    // XML解析，这一步是获取全局配置文件的configuration节点（包含所有子节点）
+    XNode configurationNode = parser.evalNode("/configuration");
+    // 解析configuration节点，将其中的配置信息保存到configuration对象中
+    parseConfiguration(configurationNode);
     return configuration;
   }
 
+  /**
+   * 解析配置文件到configuration中
+   * @param root
+   */
   private void parseConfiguration(XNode root) {
     try {
       // issue #117 read properties first
+      // 解析properties节点
       propertiesElement(root.evalNode("properties"));
+      // 解析settings节点
       Properties settings = settingsAsProperties(root.evalNode("settings"));
       loadCustomVfs(settings);
       loadCustomLogImpl(settings);
+      // 解析typeAliases节点
       typeAliasesElement(root.evalNode("typeAliases"));
+      // 解析plugins节点
       pluginElement(root.evalNode("plugins"));
+      // 解析objectFactory节点
       objectFactoryElement(root.evalNode("objectFactory"));
+      // 解析objectFactory节点
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
+      // 解析objectFactory节点
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
+      // 解析objectFactory节点
       environmentsElement(root.evalNode("environments"));
+      // 解析objectFactory节点
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
+      // 解析objectFactory节点
       typeHandlerElement(root.evalNode("typeHandlers"));
+      // 解析mappers节点，将mapper映射文件中的内容全部解析并保存在configuration中
       mapperElement(root.evalNode("mappers"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
@@ -220,6 +241,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   private void propertiesElement(XNode context) throws Exception {
+    // 配置了properties属性才去解析
     if (context != null) {
       Properties defaults = context.getChildrenAsProperties();
       String resource = context.getStringAttribute("resource");
@@ -385,6 +407,7 @@ public class XMLConfigBuilder extends BaseBuilder {
             }
           } else if (resource == null && url == null && mapperClass != null) {
             Class<?> mapperInterface = Resources.classForName(mapperClass);
+            // 这里会在knowMappers里面保存MapperProxyFactory
             configuration.addMapper(mapperInterface);
           } else {
             throw new BuilderException("A mapper element may only specify a url, resource or class, but not more than one.");
