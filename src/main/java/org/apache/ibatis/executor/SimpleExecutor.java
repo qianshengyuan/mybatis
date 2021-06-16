@@ -53,11 +53,24 @@ public class SimpleExecutor extends BaseExecutor {
     }
   }
 
+  /**
+   *
+   * @param ms 表示一个增删改查标签
+   * @param parameter
+   * @param rowBounds mybatis的逻辑分页，一般不用
+   * @param resultHandler
+   * @param boundSql
+   * @param <E>
+   * @return
+   * @throws SQLException
+   */
   @Override
   public <E> List<E> doQuery(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
     Statement stmt = null;
     try {
+      // 获取configuration对象
       Configuration configuration = ms.getConfiguration();
+      // 创建一个StatementHandler 如果有插件包装 获取到的是代理对象
       StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, resultHandler, boundSql);
       stmt = prepareStatement(handler, ms.getStatementLog());
       return handler.query(stmt, resultHandler);

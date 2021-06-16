@@ -44,7 +44,10 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
 
   @Override
   public SqlSession openSession() {
-    return openSessionFromDataSource(configuration.getDefaultExecutorType(), null, false);
+    // 获取默认的Executor类型  SIMPLE 一个简单的执行器
+    ExecutorType defaultExecutorType = configuration.getDefaultExecutorType();
+    // 从数据源中拿到openSession
+    return openSessionFromDataSource(defaultExecutorType, null, false);
   }
 
   @Override
@@ -87,13 +90,17 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
     return configuration;
   }
 
-  private SqlSession openSessionFromDataSource(ExecutorType execType, TransactionIsolationLevel level, boolean autoCommit) {
+  private SqlSession openSessionFromDataSource(ExecutorType executorType, TransactionIsolationLevel level, boolean autoCommit) {
     Transaction tx = null;
     try {
+      // 从全局配置信息中获取到当前环境信息
       final Environment environment = configuration.getEnvironment();
       final TransactionFactory transactionFactory = getTransactionFactoryFromEnvironment(environment);
       tx = transactionFactory.newTransaction(environment.getDataSource(), level, autoCommit);
-      final Executor executor = configuration.newExecutor(tx, execType);
+      // 四大对象之一Executor  sql执行器
+      // 如果全局配置文件配置了cacheEnabled为true，则创建一个cacheExecutor，若关闭则返回一个SimpleExecutor(默认)
+      final Executor executor = configuration.newExecutor(tx, executorType);
+      // 生成一个DefaultSqlSession 默认包含配置configuration和执行器executor
       return new DefaultSqlSession(configuration, executor, autoCommit);
     } catch (Exception e) {
       closeTransaction(tx); // may have fetched a connection so lets call close()

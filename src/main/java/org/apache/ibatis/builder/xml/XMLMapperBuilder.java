@@ -93,8 +93,11 @@ public class XMLMapperBuilder extends BaseBuilder {
   public void parse() {
     // 判断当前的类是否被加载过
     if (!configuration.isResourceLoaded(resource)) {
-      // 真正的解析我们的mapper文件
-      configurationElement(parser.evalNode("/mapper"));
+      // 真正的解析我们的mapper文件 先通过XPathParser获取到mapper节点信息，一个mapper文件就是一个mapper节点
+      XNode mapperNode = parser.evalNode("/mapper");
+      // 解析mapper节点中的信息，设置到Configuration对象中去
+      configurationElement(mapperNode);
+      // 标志为已经解析完成
       configuration.addLoadedResource(resource);
       bindMapperForNamespace();
     }
@@ -127,7 +130,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       resultMapElements(context.evalNodes("/mapper/resultMap"));
       // 解析可复用的sql信息 是一个list
       sqlElement(context.evalNodes("/mapper/sql"));
-      // 解析所有的增删改查标签
+      // 解析所有的增删改查标签 增删改查标签的list 表示所有的标签
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);

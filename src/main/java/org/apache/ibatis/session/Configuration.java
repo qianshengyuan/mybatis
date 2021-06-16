@@ -655,6 +655,7 @@ public class Configuration {
   }
 
   public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+    // 根据mappedStatement的statementType创建不同的StatementHandler
     StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject, rowBounds, resultHandler, boundSql);
     statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
     return statementHandler;
@@ -671,13 +672,18 @@ public class Configuration {
     if (ExecutorType.BATCH == executorType) {
       executor = new BatchExecutor(this, transaction);
     } else if (ExecutorType.REUSE == executorType) {
+      // 可重复使用的执行器，resume只会解析一次sqlNode
       executor = new ReuseExecutor(this, transaction);
     } else {
+      // 默认生成一个SimpleExecutor
       executor = new SimpleExecutor(this, transaction);
     }
+    // 是否开启二级缓存，再装饰一遍  装饰器模式? 代理模式？
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }
+    // 拿到所有的拦截器，调用每个拦截器的plugin方法，把目标对象包装一下，最终返回
+    // 插件原理
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }
@@ -842,6 +848,7 @@ public class Configuration {
   }
 
   public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
+    // mapperRegistry是configuration的一个属性
     return mapperRegistry.getMapper(type, sqlSession);
   }
 

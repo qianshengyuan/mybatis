@@ -73,6 +73,7 @@ public class DefaultSqlSession implements SqlSession {
   @Override
   public <T> T selectOne(String statement, Object parameter) {
     // Popular vote was to return null on 0 results and throw exception on too many.
+    // 实际调用的是sqlSession的selectList
     List<T> list = this.selectList(statement, parameter);
     if (list.size() == 1) {
       return list.get(0);
@@ -145,10 +146,23 @@ public class DefaultSqlSession implements SqlSession {
     return selectList(statement, parameter, rowBounds, Executor.NO_RESULT_HANDLER);
   }
 
+  /**
+   *
+   * @param statement 当前sql语句的唯一标识
+   * @param parameter
+   * @param rowBounds
+   * @param handler
+   * @param <E>
+   * @return
+   */
   private <E> List<E> selectList(String statement, Object parameter, RowBounds rowBounds, ResultHandler handler) {
     try {
+      // 通过sql标签的id获取MappedStatement
       MappedStatement ms = configuration.getMappedStatement(statement);
-      return executor.query(ms, wrapCollection(parameter), rowBounds, handler);
+      // 如果传数组/list/collection 把参数进行包装一下
+      Object o = wrapCollection(parameter);
+      // 调用executor的查询方法
+      return executor.query(ms, o, rowBounds, handler);
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);
     } finally {
@@ -285,6 +299,7 @@ public class DefaultSqlSession implements SqlSession {
 
   @Override
   public <T> T getMapper(Class<T> type) {
+    // 使用configuration去获取mapper
     return configuration.getMapper(type, this);
   }
 

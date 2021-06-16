@@ -42,7 +42,7 @@ public class CachingExecutor implements Executor {
   private final TransactionalCacheManager tcm = new TransactionalCacheManager();
 
   public CachingExecutor(Executor delegate) {
-    this.delegate = delegate;
+    this.delegate = delegate; // 代表
     delegate.setExecutorWrapper(this);
   }
 
@@ -93,6 +93,7 @@ public class CachingExecutor implements Executor {
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
       throws SQLException {
     Cache cache = ms.getCache();
+    // 是否开启二级缓存，这里是从mapper文件读取cache标签
     if (cache != null) {
       flushCacheIfRequired(ms);
       if (ms.isUseCache() && resultHandler == null) {
@@ -106,6 +107,7 @@ public class CachingExecutor implements Executor {
         return list;
       }
     }
+    // 没开启二级缓存，调用BaseExecutor的query方法去查（再次查一级缓存，一级缓存没有查数据库）
     return delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
 

@@ -131,7 +131,7 @@ public class XMLConfigBuilder extends BaseBuilder {
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
       // 解析reflectorFactory节点
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
-      // 设置setting信息，如果选项没有配置，则提供默认值
+      // 解析setting标签中所有的配置
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
       // 解析environments节点
@@ -402,9 +402,11 @@ public class XMLConfigBuilder extends BaseBuilder {
           String url = child.getStringAttribute("url");
           String mapperClass = child.getStringAttribute("class");
           if (resource != null && url == null && mapperClass == null) {
+            // 如果是通过resource注册
             ErrorContext.instance().resource(resource);
             try(InputStream inputStream = Resources.getResourceAsStream(resource)) {
               XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
+              // 解析mapper文件 使用XMLMapperBuilder中XPathParser进行解析
               mapperParser.parse();
             }
           } else if (resource == null && url != null && mapperClass == null) {

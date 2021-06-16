@@ -80,10 +80,14 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
+      // 先判断要执行的方法是否是Object的方法（如toString、hashCode等），直接执行
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, args);
       } else {
-        return cachedInvoker(method).invoke(proxy, method, args, sqlSession);
+        // 是接口中自己声明的方法 去执行
+        // 将当前要执行的方法，包装成mapperMethod 这是mybatis认识的方法
+        MapperMethodInvoker mapperMethodInvoker = cachedInvoker(method);
+        return mapperMethodInvoker.invoke(proxy, method, args, sqlSession);
       }
     } catch (Throwable t) {
       throw ExceptionUtil.unwrapThrowable(t);
